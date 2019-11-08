@@ -1,0 +1,114 @@
+<ui:composition template="/WEB-INF/template/LayoutPadrao.xhtml"
+	xmlns="http://www.w3.org/1999/xhtml"
+	xmlns:h="http://java.sun.com/jsf/html"
+	xmlns:f="http://java.sun.com/jsf/core"
+	xmlns:ui="http://java.sun.com/jsf/facelets"
+	xmlns:p="http://primefaces.org/ui" xmlns:o="http://omnifaces.org/ui">
+
+	<ui:define name="titulo">Dia de Visita</ui:define>
+
+	<ui:define name="corpo">
+
+
+		<f:metadata>
+			<f:viewParam name="dummy" />
+			<f:event listener="#{diaVisitaBean.init}" type="preRenderView" />
+			<f:event listener="#{cadastroVendedorBean.init}" type="preRenderView" />
+		</f:metadata>
+
+		<h:form id="frmDiaVisita">
+			<p:growl id="growl" />
+
+			
+				<div class="ui-g">
+					<div class="ui-g-12 ui-md-2">
+					
+						<h3>Selecione o Vendedor</h3>
+						
+						
+							
+						<p:selectOneMenu value="#{diaVisitaBean.vendedorSelecionado}" autoWidth="true" >
+							<f:selectItem itemLabel="Selecione..." itemValue="" noSelectionOption="true" />
+							<f:selectItems value="#{cadastroVendedorBean.vendedores}"
+								var="vendedor" itemLabel="#{vendedor.id} - #{vendedor.nome}" itemValue="#{vendedor}"  />
+						</p:selectOneMenu>
+						<p:spacer/>
+						<p:commandButton id="filtroRotaBtn" icon="fa fa-search-plus"
+						actionListener="#{diaVisitaBean.filtrarClientes}" update="frmDiaVisita"/>
+					
+					
+						<h3>Selecione o dia de Visita</h3>
+						<p:dataList id="listaHoje" value="#{diaVisitaBean.diaSemana}" rowIndexVar="linha"
+							var="dia" >
+							
+							<p:commandLink	 title="Selecionar"
+								styleClass="ui-icon ui-icon-search" process="@this"
+								actionListener="#{diaVisitaBean.atualizaDiaSelecionado(linha)}"
+								style="display:inline-block; margin-right:5px" update="frmDiaVisita:growl" >
+							</p:commandLink>
+							<h:outputText value="#{dia}" />
+							
+    					</p:dataList>
+					</div>
+					<div class="ui-g-12 ui-md-10 ui-g-nopad">
+						<p:gmap widgetVar="gMap" id="gMap" fitBounds="false"
+							center="#{diaVisitaBean.centro}"
+							zoom="#{diaVisitaBean.zoomLevel}"
+							model="#{diaVisitaBean.advancedModel}" type="terrain"
+							disableDefaultUI="false" style="width:100%;height:400px">
+
+							<p:ajax event="overlaySelect" process="@this"
+								listener="#{diaVisitaBean.overlaySelect}" update="gMap, growl" />
+							<p:ajax event="stateChange"
+								listener="#{diaVisitaBean.onStateChange}" />
+							<p:ajax event="pointSelect"
+								listener="#{diaVisitaBean.onPointSelect}" update="gMap" />
+						</p:gmap>
+					</div>
+				</div>
+				
+
+				
+				<h:inputHidden id="polygon" value="#{diaVisitaBean.polyg}" />
+
+				<p:remoteCommand name="atualizaMarkers"
+					actionListener="#{diaVisitaBean.atualizaMarkers}"/>
+				
+				<script type="text/javascript">
+					function inPolygon() {
+
+						var gmap = PF('gMap').getMap();
+						var markers = gmap.markers;
+						var polyGson = eval('('
+								+ document
+										.getElementById('frmDiaVisita:polygon').value
+								+ ')');
+						var polygon = new google.maps.Polygon(polyGson);
+						var selecionados = [];
+
+						for ( var i in gmap.markers) {
+							
+							if (google.maps.geometry.poly.containsLocation(
+									markers[i].position, polygon)) {
+								selecionados.push(markers[i].id);
+							}
+						}
+						
+						atualizaMarkers([ {
+							name : 'inPolygon',
+							value : selecionados
+						} ]);
+
+					}
+				</script>
+		</h:form>
+
+
+
+
+
+
+
+
+	</ui:define>
+</ui:composition>

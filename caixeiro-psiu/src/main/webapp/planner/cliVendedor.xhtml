@@ -1,0 +1,173 @@
+<ui:composition template="/WEB-INF/template/LayoutPadrao.xhtml"
+	xmlns="http://www.w3.org/1999/xhtml"
+	xmlns:h="http://java.sun.com/jsf/html"
+	xmlns:f="http://java.sun.com/jsf/core"
+	xmlns:ui="http://java.sun.com/jsf/facelets"
+	xmlns:p="http://primefaces.org/ui" xmlns:o="http://omnifaces.org/ui">
+
+	<ui:define name="titulo">Região Vendedor</ui:define>
+
+	<ui:define name="corpo">
+
+		<f:metadata>
+			<f:viewParam name="dummy" />
+			<f:event listener="#{cliVendedorBean.init}" type="preRenderView" />
+			<f:event listener="#{cadastroVendedorBean.init}" type="preRenderView" />
+		</f:metadata>
+
+		<h:form id="frmCliVendedor">
+			<p:growl id="growl" autoUpdate="true" />
+
+
+			<div class="ui-g">
+				<div class="ui-g-12 ui-md-2">
+
+					<h3>Selecione o Vendedor</h3>
+					<p:selectOneMenu id="listaVendedor"
+						value="#{cliVendedorBean.vendedorSelecionado}" style="width:55%;" autoWidth="false">
+						
+						<f:selectItem noSelectionOption="true" itemLabel="Selecione..."
+							itemValue="" />
+						<f:selectItems value="#{cadastroVendedorBean.vendedores}"
+							var="vend" itemLabel="#{vend.id} - #{vend.nome}" itemValue="#{vend}"/>
+						
+					</p:selectOneMenu>
+					<p:commandButton id="filtroRotaBtn" icon="fa fa-search-plus"
+						onsuccess="vendedorSelecionadoMsg()"
+						title="Selecionar" update="listaVendedor, growl" />
+					<p:commandButton process="@this" title="Novo Vendedor"
+						icon="fa fa-user-plus" onclick="PF('dlgVendedor').show()" />
+
+					<p />
+
+					
+					<p:dataTable id="vendedorTable" var="ve" value="#{cadastroVendedorBean.vendedores}">
+						<p:column width="20%" headerText="Id">
+							<h:outputText value="#{ve.id}" />
+						</p:column>
+						<p:column headerText="Nome">
+							<h:outputText value="#{ve.nome}" />
+						</p:column>
+						<p:column width="22%" headerText="Qtde">
+							<h:outputText value="#{cliVendedorBean.qtdeClientes(ve)}" />
+						</p:column>
+					</p:dataTable>
+				</div>
+				<div class="ui-g-12 ui-md-10 ui-g-nopad">
+					<p:gmap widgetVar="gMap" id="gMap" fitBounds="false"
+						center="#{cliVendedorBean.centro}"
+						zoom="#{cliVendedorBean.zoomLevel}"
+						model="#{cliVendedorBean.advancedModel}" type="terrain"
+						disableDefaultUI="false" style="width:100%;height:400px">
+
+						<p:ajax event="stateChange" immediate="true"
+							listener="#{cliVendedorBean.onStateChange}" />
+
+						<p:ajax event="overlaySelect"
+							listener="#{cliVendedorBean.overlaySelect}" update="gMap, vendedorTable" />
+
+						<p:ajax event="pointSelect" process="@this"
+							listener="#{cliVendedorBean.onPointSelect}" update="gMap" />
+					</p:gmap>
+				</div>
+			</div>
+
+
+			<h:inputHidden id="polygon" value="#{cliVendedorBean.polyg}" />
+			<h:inputHidden id="rotaClientes"
+				value="#{cliVendedorBean.rotaClientes}" />
+
+			<p:remoteCommand name="atualizaMarkers" update="vendedorTable"
+				actionListener="#{cliVendedorBean.atualizaMarkers}" />
+				
+				<p:remoteCommand name="vendedorSelecionadoMsg"
+				actionListener="#{cliVendedorBean.vendedorSelecionadoMsg}" />
+
+			<script type="text/javascript">
+					function inPolygon() {
+						var gmap = PF('gMap').getMap();
+						var markers = gmap.markers;
+						var polyGson = eval('('
+								+ document
+										.getElementById('frmCliVendedor:polygon').value
+								+ ')');
+						var polygon = new google.maps.Polygon(polyGson);
+						var selecionados = [];
+
+						for ( var i in gmap.markers) {
+							
+							if (google.maps.geometry.poly.containsLocation(markers[i].position, polygon)) {
+								selecionados.push(markers[i].id);
+							}
+						}
+						
+						atualizaMarkers([ {
+							name : 'inPolygon',
+							value : selecionados
+						} ]);
+
+					}
+					
+					 function atualizaLabel(){
+						var gmap = PF('gMap').getMap();
+						var markers = gmap.markers;
+						
+						var lista = eval('('
+								+ document
+										.getElementById('frmCliVendedor:rotaClientes').value
+								+ ')');
+						
+						var tamanho = gmap.markers.length;
+						
+						/* for ( var i in gmap.markers) {
+							var label = {
+ 							    	color: "white",
+ 							    	text: lista[i],
+ 							    	fontWeight: "bolder"
+ 							    }; 
+							
+							var mark = markers[i];
+							mark.setLabel(label);
+						} */
+						
+					}
+					
+				</script>
+
+
+
+		</h:form>
+
+
+
+
+		<p:dialog header="Cadastro de Vendedor" widgetVar="dlgVendedor"
+			id="dlgVendedor" modal="true" width="30%">
+			<h:form id="frmVendedor">
+				<p:panelGrid columns="2" id="panelVendedor"
+					style="width: 100%; margin-top: 20px" columnClasses="rotulo, campo">
+
+					<p:outputLabel value="Código" for="idVendedor" />
+					<p:inputText id="idVendedor" size="5" maxlength="5"
+						value="#{cadastroVendedorBean.vendedor.id}" required="true"
+						requiredMessage="Código inválido!" />
+
+					<p:outputLabel value="Nome" for="nomeVendedor" />
+					<p:inputText id="nomeVendedor" size="25" maxlength="25"
+						value="#{cadastroVendedorBean.vendedor.nome}" required="true"
+						requiredMessage="Nome inválido!" />
+				</p:panelGrid>
+
+				<div align="right" style="margin-top: 10px">
+					<p:commandButton update="frmCliVendedor:listaVendedor, frmCliVendedor:vendedorTable"
+						icon="ui-icon-plus" value="Salvar"
+						actionListener="#{cadastroVendedorBean.salvar}"
+						oncomplete="PF('dlgVendedor').hide()" />
+				</div>
+			</h:form>
+		</p:dialog>
+
+
+
+	</ui:define>
+</ui:composition>

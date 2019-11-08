@@ -1,0 +1,213 @@
+<ui:composition template="/WEB-INF/template/LayoutPadrao.xhtml"
+	xmlns="http://www.w3.org/1999/xhtml"
+	xmlns:h="http://java.sun.com/jsf/html"
+	xmlns:f="http://java.sun.com/jsf/core"
+	xmlns:ui="http://java.sun.com/jsf/facelets"
+	xmlns:p="http://primefaces.org/ui" xmlns:o="http://omnifaces.org/ui">
+
+	<ui:define name="titulo">Região do Vendedor</ui:define>
+
+	<ui:define name="corpo">
+	
+		<f:metadata>
+			<f:viewParam name="dummy" />
+			<f:event listener="#{cliVendedorAutoBean.init}" type="preRenderView" />
+			<f:event listener="#{cadastroVendedorBean.init}" type="preRenderView" />
+		</f:metadata>
+
+		<h:form id="frmCliVendedor">
+			<p:growl id="growl" autoUpdate="true" />
+
+			
+				<div class="ui-g">
+					<div class="ui-g-12 ui-md-2">
+
+						<h3>Selecione o Vendedor</h3>
+						<p:dataList id="listaVendedor" value="#{cadastroVendedorBean.vendedores}"
+						 rowIndexVar="linha" var="vend" >
+							<p:commandLink	 title="Selecionar"
+								styleClass="ui-icon ui-icon-search" update="frmCliVendedor:growl"
+								style="display:inline-block; margin-right:5px" onsuccess="vendSelecionadoMsg()" >
+								<f:setPropertyActionListener value="#{vend}" target="#{cliVendedorAutoBean.vendedorSelecionado}"/>
+							</p:commandLink>
+							<h:outputText value="- #{vend.id} - #{vend.nome}" />
+    					</p:dataList>
+    					<p/>
+    					
+    					<p:panel id="basic" header="Funções" style="margin-bottom:20px">
+					        <h:panelGrid columns="1" cellpadding="3">
+					            
+					            <p:commandLink onclick="PF('dlgVendedor').show()" style="text-decoration:none;"  >
+					            	<i class="fa fa-user-plus" style="font-size: 1em;" /> Novo Vendedor
+					            </p:commandLink>
+					            <p:commandLink onclick="PF('dlgAutoSelect').show()" style="text-decoration:none;"  >
+					            	<i class="fa fa-users" style="font-size: 1em;" /> Auto Select
+					            </p:commandLink>
+					        </h:panelGrid>
+					    </p:panel>
+    					
+    					<p:spacer/>
+    					
+					</div>
+					<div class="ui-g-12 ui-md-10 ui-g-nopad">
+						<p:gmap widgetVar="gMap" id="gMap" fitBounds="false"
+							center="#{cliVendedorAutoBean.centro}"
+							zoom="#{cliVendedorAutoBean.zoomLevel}"
+							model="#{cliVendedorAutoBean.advancedModel}" type="terrain"
+							disableDefaultUI="false" style="width:100%;height:400px">
+
+							<p:ajax event="stateChange" process="@this"
+								listener="#{cliVendedorAutoBean.onStateChange}" />
+							
+							<p:ajax event="overlaySelect" process="@this"
+								listener="#{cliVendedorAutoBean.overlaySelect}" update="gMap, growl"
+								oncomplete="atualizaLabel()" />
+							 
+							<p:ajax event="pointSelect" process="@this"
+								listener="#{cliVendedorAutoBean.onPointSelect}" update="gMap" />
+						</p:gmap>
+					</div>
+				</div>
+				
+
+				<h:inputHidden id="polygon" value="#{cliVendedorAutoBean.polyg}" />
+				<h:inputHidden id="rotaClientes" value="#{cliVendedorAutoBean.rotaClientes}" />
+				<p:remoteCommand name="atualizaMarkers"
+					actionListener="#{cliVendedorAutoBean.atualizaMarkers}"/>
+				
+				<p:remoteCommand name="vendSelecionadoMsg" actionListener="#{cliVendedorAutoBean.vendedorSelecionadoMsg}"
+				 process="@this" />
+				<script type="text/javascript">
+					function inPolygon() {
+
+						var gmap = PF('gMap').getMap();
+						var markers = gmap.markers;
+						var polyGson = eval('('
+								+ document
+										.getElementById('frmCliVendedor:polygon').value
+								+ ')');
+						var polygon = new google.maps.Polygon(polyGson);
+						var selecionados = [];
+
+						for ( var i in gmap.markers) {
+							
+							if (google.maps.geometry.poly.containsLocation(markers[i].position, polygon)) {
+								selecionados.push(markers[i].id);
+							}
+						}
+						
+						atualizaMarkers([ {
+							name : 'inPolygon',
+							value : selecionados
+						} ]);
+
+					}
+					
+					function atualizaLabel(){
+						 var gmap = PF('gMap').getMap();
+						var markers = gmap.markers;
+						
+						var lista = eval('('
+								+ document
+										.getElementById('frmCliVendedor:rotaClientes').value
+								+ ')');
+						
+						for ( var i in gmap.markers) {
+							var label = {
+ 							    	color: "white",
+ 							    	text: lista[i],
+ 							    	fontWeight: "bolder"
+ 							    };
+							
+							var mark = markers[i];
+							mark.setLabel(label); 
+						}
+						
+						//dessa forma cria google marker, daí nao pega eventos do primefaces
+// 						for ( var i in gmap.markers) {
+// 							var marker = new google.maps.Marker({
+// 							    position: markers[i].position,
+// 							    //label: lista[i] ,
+// 							    //icon: markers[i].icon,
+// 							    label: {
+// 							    	color: "white",
+// 							    	text: lista[i],
+// 							    	fontWeight: "bolder"
+// 							    },
+// 							    title: markers[i].title,
+// 							    map: gmap
+// 							  });
+// 						}
+					}
+					
+				</script>
+
+			
+			
+			<p:dialog header="Caixeiro Viajante - AutoSelect" widgetVar="dlgAutoSelect"
+				id="dlgAutoSelect" modal="true" width="30%">
+				
+				<p:outputLabel value="Este processo irá apagar o vendedor de todos os clientes!"
+				style="color: red;" />
+				
+				<p:panelGrid columns="2" id="panelAutoSelect"
+					style="width: 100%; margin-top: 20px" columnClasses="rotulo, campo">
+					
+					<p:outputLabel value="Total Clientes" for="numClientes" />
+					<p:outputLabel id="numClientes" size="5" maxlength="5"
+						value="#{cliVendedorAutoBean.clientes.size()}" />
+
+					<p:outputLabel value="Total Vendedores" for="numVendedores" />
+					<p:outputLabel id="numVendedores" size="25" maxlength="25" 
+						value="#{cadastroVendedorBean.vendedores.size()}" />
+					
+					<p:outputLabel value="Cliente X Vendedor" for="cliXvend" />
+					<p:outputLabel id="cliXvend"
+						value="#{cliVendedorAutoBean.clientes.size()/cadastroVendedorBean.vendedores.size()}" />		
+				
+				</p:panelGrid>
+
+				<div align="right" style="margin-top: 10px">
+					<p:commandButton update="listaVendedor" icon="fa fa-fw fa-group"
+						value="Auto Select" process="@this"
+						actionListener="#{cliVendedorAutoBean.auto}"
+						oncomplete="PF('dlgAutoSelect').hide()" />
+				</div>
+			</p:dialog>
+
+		</h:form>
+
+
+		<p:dialog header="Cadastro de Vendedor" widgetVar="dlgVendedor"
+			id="dlgVendedor" modal="true" width="30%">
+			<h:form id="frmVendedor">
+				<p:panelGrid columns="2" id="panelVendedor"
+					style="width: 100%; margin-top: 20px" columnClasses="rotulo, campo">
+
+					<p:outputLabel value="Código" for="idVendedor" />
+					<p:inputText id="idVendedor" size="5" maxlength="5"
+						value="#{cadastroVendedorBean.vendedor.id}" required="true"
+						requiredMessage="Código inválido!" />
+
+					<p:outputLabel value="Nome" for="nomeVendedor" />
+					<p:inputText id="nomeVendedor" size="25" maxlength="25"
+						value="#{cadastroVendedorBean.vendedor.nome}" required="true"
+						requiredMessage="Nome inválido!" />
+				</p:panelGrid>
+
+				<div align="right" style="margin-top: 10px">
+					<p:commandButton
+						update="frmCliVendedor:listaVendedor frmCliVendedor:panelAutoSelect"
+						icon="ui-icon-plus" value="Salvar"
+						actionListener="#{cadastroVendedorBean.salvar}"
+						oncomplete="PF('dlgVendedor').hide()" />
+				</div>
+			</h:form>
+		</p:dialog>
+
+
+
+
+
+	</ui:define>
+</ui:composition>

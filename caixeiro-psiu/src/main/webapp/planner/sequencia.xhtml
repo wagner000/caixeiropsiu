@@ -1,0 +1,166 @@
+<ui:composition template="/WEB-INF/template/LayoutPadrao.xhtml"
+	xmlns="http://www.w3.org/1999/xhtml"
+	xmlns:h="http://java.sun.com/jsf/html"
+	xmlns:f="http://java.sun.com/jsf/core"
+	xmlns:ui="http://java.sun.com/jsf/facelets"
+	xmlns:p="http://primefaces.org/ui" xmlns:o="http://omnifaces.org/ui">
+
+	<ui:define name="titulo">Sequencia de Visita</ui:define>
+
+	<ui:define name="corpo">
+
+
+		<f:metadata>
+			<f:viewParam name="dummy" />
+			<f:event listener="#{sequenciaBean.init}" type="preRenderView" />
+			<f:event listener="#{cadastroVendedorBean.init}" type="preRenderView" />
+		</f:metadata>
+
+		<h:form id="frmSequencia">
+			<p:growl id="growl" />
+
+			
+				<div class="ui-g">
+					<div class="ui-g-12 ui-md-2">
+					
+						<h3>Selecione o Vendedor</h3>
+						
+						
+							
+						<p:selectOneMenu value="#{sequenciaBean.vendedorSelecionado}" autoWidth="true" >
+							<f:selectItem itemLabel="Selecione..." itemValue="" noSelectionOption="true" />
+							<f:selectItems value="#{cadastroVendedorBean.vendedores}"
+								var="vendedor" itemLabel="#{vendedor.id} - #{vendedor.nome}" itemValue="#{vendedor}"  />
+						</p:selectOneMenu>
+						
+					
+					
+						<h3>Selecione o dia de Visita</h3>
+						<p:selectOneMenu value="#{sequenciaBean.diaSelecionado}" autoWidth="true" >
+							<f:selectItem itemLabel="Selecione..." itemValue="" noSelectionOption="true" />
+							<f:selectItems value="#{sequenciaBean.diaSemana}"
+								var="dia" itemLabel="#{dia}" itemValue="#{dia}"  />
+						</p:selectOneMenu>
+						<p:spacer/>
+						<p:commandButton id="filtroRotaBtn" icon="fa fa-search-plus"
+						actionListener="#{sequenciaBean.filtrarClientes}"/>
+						
+						<p/>
+    					
+    					<p:panel id="basic" header="Sequência de Visita" style="margin-bottom:20px;">
+					        <h:panelGrid columns="1" cellpadding="3">
+					            
+					            <p:commandLink oncomplete="PF('dlgAutoSelect').show()"
+					            update="dlgAutoSelect"	style="text-decoration:none;"  >
+					            	<i class="fa fa-users" style="font-size: 1em;" /> Auto Select
+					            </p:commandLink>
+					            
+					        </h:panelGrid>
+					    </p:panel>
+					    
+					    <p:panel id="resultado" header="Resultado" style="margin-bottom:20px;">
+					        <h:panelGrid columns="2" cellpadding="3">
+					            
+					            <p:outputLabel value="Qtde Clientes: " />
+					            <p:outputLabel value="#{sequenciaBean.clientes.size()}" />
+					            
+					            <p:outputLabel value="VMP: " />
+					            <p:outputLabel value="#{sequenciaBean.primeiroResultado}" />
+					            
+					            <p:outputLabel value="DVV: " />
+					            <p:outputLabel value="#{sequenciaBean.melhorResultado}" />
+					        </h:panelGrid>
+					    </p:panel>
+    					
+    					<p:spacer/>
+						
+					</div>
+					<div class="ui-g-12 ui-md-10 ui-g-nopad">
+						<p:gmap widgetVar="gMap" id="gMap" fitBounds="false"
+							center="#{sequenciaBean.centro}"
+							zoom="#{sequenciaBean.zoomLevel}"
+							model="#{sequenciaBean.advancedModel}" type="terrain"
+							disableDefaultUI="false" style="width:100%;height:400px">
+
+							<p:ajax event="overlaySelect" process="@this"
+								listener="#{sequenciaBean.overlaySelect}" update="growl" />
+							<p:ajax event="stateChange"
+								listener="#{sequenciaBean.onStateChange}" />
+							
+						</p:gmap>
+					</div>
+				</div>
+				
+				<h:inputHidden id="cliSequencia" value="#{sequenciaBean.cliSequencia}" />
+				
+				<script type="text/javascript">
+					
+					function atualizaLabel(){
+						var gmap = PF('gMap').getMap();
+						var markers = gmap.markers;
+						
+						var lista = eval('('
+								+ document
+										.getElementById('frmSequencia:cliSequencia').value
+								+ ')');
+						
+						for ( var i in gmap.markers) {
+							var label = {
+ 							    	color: "white",
+ 							    	text: lista[i],
+ 							    	fontWeight: "bolder"
+ 							    };
+							
+							var mark = markers[i];
+							mark.setLabel(label);
+						}
+					}
+					
+				</script>
+		
+
+
+
+			<p:dialog header="Caixeiro Viajante - AutoSelect" widgetVar="dlgAutoSelect"
+				id="dlgAutoSelect" modal="true" width="30%">
+				
+				<p:outputLabel value="Este processo irá apagar a sequência de todos os clientes!"
+				style="color: red;" />
+				
+				<p:panelGrid columns="2" id="panelAutoSelect"
+					style="width: 100%; margin-top: 20px" columnClasses="rotulo, campo">
+					
+					<p:outputLabel value="Total Clientes" for="numClientes" />
+					<p:outputLabel id="numClientes" size="5" maxlength="5"
+						value="#{sequenciaBean.clientes.size()}" />
+
+				</p:panelGrid>
+
+				<div align="right" style="margin-top: 10px">
+					<p:commandButton icon="fa fa-fw fa-group"
+						value="Auto Select" process="@this"
+						
+						oncomplete="PF('dlgAutoSelect').hide();PF('dlgSelectCliente').show()" />
+				</div>
+			</p:dialog>
+			
+			<p:dialog header="Caixeiro Viajante - AutoSelect" widgetVar="dlgSelectCliente"
+				id="dlgSelectCliente" modal="true" width="30%">
+				
+				<p:outputLabel value="Selecione no mapa o PRIMEIRO Cliente a ser atendido!"
+				style="color: red;" />
+				
+				<p:commandButton icon="fa fa-fw fa-group"
+						value="OK" process="@this"
+						actionListener="#{sequenciaBean.setCaixeiro()}"
+						oncomplete="PF('dlgSelectCliente').hide()" />
+
+				
+			</p:dialog>
+			
+
+
+</h:form>
+
+	</ui:define>
+</ui:composition>

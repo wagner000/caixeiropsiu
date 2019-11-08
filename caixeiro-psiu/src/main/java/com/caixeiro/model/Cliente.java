@@ -1,0 +1,149 @@
+package com.caixeiro.model;
+
+import java.io.Serializable;
+
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.ManyToOne;
+import javax.persistence.Table;
+import javax.persistence.Transient;
+
+@Entity
+@Table(name="clienteold")
+public class Cliente implements Serializable {
+
+	private static final long serialVersionUID = 1L;
+
+	private Long id;
+	private String razaoSocial;
+	private String fantasia;
+	private String cpfCnpj;
+	private Vendedor vendedor;
+	private int diaSemana; //domingo = 1
+	private int sequencia;
+	private Double latitude;
+	private Double longitude;
+	
+	@Transient
+	public String getIcon() {
+		if(vendedor == null) {
+			return "http://localhost:8080/caixeiro-psiu/javax.faces.resource/icon.png.xhtml?ln=icons";
+		}else {
+			return "http://localhost:8080/caixeiro-psiu/javax.faces.resource/icon"+vendedor.getId().toString()+".png.xhtml?ln=icons";
+		}
+	}
+	
+	@Id
+	@GeneratedValue(strategy=GenerationType.IDENTITY)
+	@Column(name="id_cliente")
+	public Long getId() {
+		return id;
+	}
+	public void setId(Long id) {
+		this.id = id;
+	}
+	
+	@Column(name="razao_social")
+	public String getRazaoSocial() {
+		return razaoSocial;
+	}
+	public void setRazaoSocial(String razaoSocial) {
+		this.razaoSocial = razaoSocial;
+	}
+	
+	@Column(name="nome_fantasia")
+	public String getFantasia() {
+		return fantasia;
+	}
+	public void setFantasia(String fantasia) {
+		this.fantasia = fantasia;
+	}
+	
+	@Column(name="cpf_cnpj")
+	public String getCpfCnpj() {
+		return cpfCnpj;
+	}
+	public void setCpfCnpj(String cpfCnpj) {
+		this.cpfCnpj = cpfCnpj;
+	}
+	
+	
+	public Double getLatitude() {
+		return latitude;
+	}
+	public void setLatitude(Double latitude) {
+		this.latitude = latitude;
+	}
+	public Double getLongitude() {
+		return longitude;
+	}
+	public void setLongitude(Double longitude) {
+		this.longitude = longitude;
+	}
+	
+	
+	@Column(name="dia_semana")
+	public int getDiaSemana() {
+		return diaSemana;
+	}
+	
+	public void setDiaSemana(int diaSemana) {
+		this.diaSemana = diaSemana;
+	}
+	
+	
+	
+	
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + ((id == null) ? 0 : id.hashCode());
+		return result;
+	}
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj)
+			return true;
+		if (obj == null)
+			return false;
+		if (getClass() != obj.getClass())
+			return false;
+		Cliente other = (Cliente) obj;
+		if (id == null) {
+			if (other.id != null)
+				return false;
+		} else if (!id.equals(other.id))
+			return false;
+		return true;
+	}
+	@Override
+	public String toString() {
+		return "Cliente [id=" + id + "]";
+	}
+	
+	@ManyToOne
+	@JoinColumn(name= "id_vendedor")
+	public Vendedor getVendedor() {
+		return vendedor;
+	}
+	public void setVendedor(Vendedor vendedor) {
+		this.vendedor = vendedor;
+	}
+	
+	
+	@Column
+	public int getSequencia() {
+		return sequencia;
+	}
+	public void setSequencia(int sequencia) {
+		this.sequencia = sequencia;
+	}
+	
+	
+	
+}

@@ -1,0 +1,105 @@
+<ui:composition template="/WEB-INF/template/LayoutPadrao.xhtml"
+	xmlns="http://www.w3.org/1999/xhtml"
+	xmlns:h="http://java.sun.com/jsf/html"
+	xmlns:f="http://java.sun.com/jsf/core"
+	xmlns:ui="http://java.sun.com/jsf/facelets"
+	xmlns:p="http://primefaces.org/ui" xmlns:o="http://omnifaces.org/ui">
+
+	<ui:define name="titulo">Pesquisa Clientes</ui:define>
+
+	<ui:define name="corpo">
+
+		<f:metadata>
+			<o:viewParam name="cliente" />
+			<f:event listener="#{pesquisaClienteBean.init}" type="preRenderView" />
+		</f:metadata>
+
+		<h:form id="frmClientes">
+			<h1>Clientes</h1>
+
+			<p:messages id="messagesP" autoUpdate="true" closable="true" />
+
+			<p:toolbar style="margin-top: 20px">
+				<p:toolbarGroup>
+					<p:commandButton value="Pesquisar" disabled="true" />
+				</p:toolbarGroup>
+				<p:toolbarGroup align="right">
+					<p:commandButton process="@this" value="Novo"
+						oncomplete="PF('dlgCliente').show()"
+						actionListener="#{pesquisaClienteBean.novo}"
+						update=":frmClientes:dlgCliente" />
+				</p:toolbarGroup>
+			</p:toolbar>
+
+			<p:dataTable id="clientesTable" var="cliente"
+				value="#{pesquisaClienteBean.clientes}" rowKey="#{cliente}"
+				style="margin-top: 20px" emptyMessage="Nenhum cliente encontrado."
+				rows="20" paginator="true" paginatorAlwaysVisible="false"
+				paginatorPosition="bottom">
+
+				<p:column headerText="Código" style="text-align: center; width:5% ">
+					<h:outputText value="#{cliente.id}" />
+				</p:column>
+
+				<p:column headerText="Nome Fantasia" style="text-align: center; ">
+					<h:outputText value="#{cliente.fantasia}" />
+				</p:column>
+
+				<p:column style="width: 100px; text-align: center">
+					<p:commandButton icon="ui-icon-pencil" title="Editar"
+						oncomplete="PF('dlgCliente').show()" process="@this"
+						update=":frmClientes:dlgCliente">
+						<f:setPropertyActionListener
+							target="#{pesquisaClienteBean.clienteSelecionado}"
+							value="#{cliente}" />
+					</p:commandButton>
+
+					<p:commandButton icon="ui-icon-trash" title="Excluir"
+						oncomplete="PF('confirmacaoExclusao').show()" process="@this"
+						update=":frmClientes:confirmacaoExclusaoDialog">
+						<f:setPropertyActionListener
+							target="#{pesquisaClienteBean.clienteSelecionado}"
+							value="#{cliente}" />
+					</p:commandButton>
+				</p:column>
+			</p:dataTable>
+
+
+			<p:dialog header="Cadastro de Cliente" widgetVar="dlgCliente"
+				modal="true" width="50%">
+				<p:panelGrid columns="2" id="dlgCliente"
+					style="width: 100%; margin-top: 20px" columnClasses="rotulo, campo">
+
+					<p:outputLabel value="Nome Fantasia" for="nomeFantasia" />
+					<p:inputText id="nomeFantasia" size="40" maxlength="40"
+						value="#{pesquisaClienteBean.clienteSelecionado.fantasia}" />
+						
+					<p:outputLabel value="LATITUDE" for="lat" />
+					<p:outputLabel id="lat" value="#{pesquisaClienteBean.clienteSelecionado.latitude}" />
+					
+					<p:outputLabel value="LONGITUDE" for="long" />
+					<p:outputLabel id="long" value="#{pesquisaClienteBean.clienteSelecionado.longitude}" />
+				</p:panelGrid>
+				
+				<div align="right" style="margin-top: 10px">
+					<p:commandButton update="clientesTable" icon="ui-icon-plus"
+						value="Salvar" actionListener="#{pesquisaClienteBean.salvar}"
+						oncomplete="PF('dlgCliente').hide()" />
+				</div>
+				
+			</p:dialog>
+
+			<p:confirmDialog header="Exclusão de Cliente"
+				message="Tem certeza que deseja excluir o cliente #{pesquisaClienteBean.clienteSelecionado.fantasia}?"
+				widgetVar="confirmacaoExclusao" id="confirmacaoExclusaoDialog">
+				<p:button value="Não"
+					onclick="PF('confirmacaoExclusao').hide(); return false;" />
+				<p:commandButton value="Sim"
+					oncomplete="PF('confirmacaoExclusao').hide()"
+					action="#{pesquisaClienteBean.excluir}" process="@this"
+					update=":frmClientes:clientesTable" />
+			</p:confirmDialog>
+
+		</h:form>
+	</ui:define>
+</ui:composition>
